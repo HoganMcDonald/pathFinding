@@ -17,20 +17,16 @@ $(document).ready(function() {
   $('.reset').on('click', function() {
     location.reload();
   });
-  // $('.run').on('click', aStar(grid[0][0], grid[6], [6]));
+  $('.run').on('click', aStar);
 });
 
 //Node constructor function
 var Node = function(row, column, index) {
   this.row = row;
   this.column = column;
-  this.hValue = function() {
-    return Math.abs((this.row - 6) + (this.column) - 6);
-  };
-  this.gValue = 0;
-  this.fValue = function() {
-    return this.hValue + this.gValue;
-  };
+  this.hValue = 0;
+  this.gValue = 999;
+  this.fValue = 0;
   this.status = true;
   //index number cooresponding to div number on DOM
   this.index = index;
@@ -76,6 +72,9 @@ var Node = function(row, column, index) {
   this.calcF = function() {
     this.fValue = this.gValue + this.hValue;
   };
+  this.calcH = function() {
+    this.hValue = Math.abs((this.row - 6) + (this.column) - 6);
+  };
 }; //end Node constructor
 
 //fill grid with array of arrays where grid[row][column]
@@ -84,6 +83,7 @@ var fillGrid = function(arr) {
     arr[i] = [];
     for (var j = 0; j <= columns; j++) {
       arr[i][j] = new Node(i, j, (i * (columns + 1)) + j);
+      arr[i][j].calcH();
     }
   }
 }; //end fill grid
@@ -113,62 +113,113 @@ var toggleStatus = function() {
     for (var j = 0; j <= columns; j++) {
       if ($(this).index() === grid[i][j].index) {
         grid[i][j].status = !grid[i][j].status;
-        console.log(grid[i][j].neighbors);
       }
     }
   }
-  console.log();
 }; //end toggle status
 
-//begin astar sorting
-var aStar = function(start, goal) {
-  openSet.push(start);
-  while (openSet.length > 0) {
-    //index in open set that has the lowest f value
-    var lowestIndex = 0;
-    //find lowest f value index
-    for (var i = 0; i < openSet.length; i++) {
-      //loop through open set and
-      if (openSet[i].fValue < openSet[lowestIndex].fValue) {
-        lowestIndex = i;
-      }
-    }
-    var current = openSet[lowestIndex];
-    if ($('.node').eq(current).hasClass('end')) {
-      console.log("done!!!!!!!!!!!!!");
-    }
-    //openSet.remove(current);
-    removeFromArray(openSet, current);
-    //push current to closed set
-    closedSet.push(current);
+//delivers the distance between two neighbor nodes
+var findGForNeighbor = function(node, nodeNeighbor) {
+  var tempG = 0;
+  //if diagonal to node
+  if ((nodeNeighbor.row != node.row) && (nodeNeighbor.column != node.column)) {
+    var tempG = node.gValue + 14;
+    //if neighbor is adjacent to node
+  } else {
+    var tempG = node.gValue + 10;
+  }
+  return tempG
+}; //end find G - returns g of current node plus distance to neighbor
 
-    var neighbors = current.neighbors;
-    for (var j = 0; j < neighbors.length; j++) {
-      var neighbor = neighbors[i];
-      //if neighbor is not in the closed set
-      if (!closedSet.includes(neighbor)) {
-        //if neighbor is diagonal to current
-        if ((neighbor.row != current.row) && (neighbor.column != current.column)) {
-          var tempG = current.gValue + 14;
-          //if neighbor is in open set
-          if (openSet.includes(neighbor)) {
-            //if potential g value is smaller than neighbor's g value
-            if (tempG < neighbor.gvalue) {
-              neighbor.gValue = tempG;
-            }
-          }
-          //if neighbor is adjacent to current
-        } else {
-          var tempG = current.gValue + 10;
-          //if neighbor is in open set
-          if (openSet.includes(neighbor)) {
-            //if potential g value is smaller than neighbor's g value
-            if (tempG < neighbor.gvalue) {
-              neighbor.gValue = tempG;
-            }
-          }
-        }
-      }
-    }
+var updateDisplay = function() {
+  for (var i = 0; i < openSet.length; i++) {
+    $('.node').eq(openSet[i].index).addClass('openSet');
+  }
+  for (var i = 0; i < closedSet.length; i++) {
+    $('.node').eq(closedSet[i].index).addClass('closedSet');
   }
 };
+
+//find the lowest fValue in any array
+var findLowestF = function(arr) {
+  //running lowest
+  var lowestF = 9999;
+  var lowestI = 0;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i].fValue < lowestF) {
+      lowestF = arr[i].fValue;
+      lowestI = i;
+    }
+    return i;
+  }
+}; //end find lowest f - returns index of lowest f
+
+var aStar = function() {
+  //diable the run button
+  $(this).hide();
+  //establish the start and end
+  var start = grid[0][0];
+  start.gValue = 0;
+  var end = grid[6][6];
+  openSet.push(start);
+  updateDisplay();
+  //^works
+
+  //loop through open set.
+  while (openSet.length > 0) {
+    //current is the last item in openSet (most recently added)
+    var current = openSet[findLowestF(openSet)];
+    //add current to closedSet
+    closedSet.push(current);
+    //remove current from openSet
+    openSet.pop();
+    updateDisplay();
+    //return if path is done
+    if (current.index === end.index) {
+      console.log('Done!');
+      return;
+    }
+    //loops through the neighbors of current
+    for (var i = 0; i < current.neighbors.length; i++) {
+      var thisNeighbor = current.neighbors[i];
+      //check status to see if it is traversable and if neighbor is in closedSet
+      if (thisNeighbor.status && !closedSet.includes(thisNeighbor)) {
+        console.log(thisNeighbor);
+        //---------------------------------
+        //if neighbor is in openSet or if current path to neighbor is less than existing path
+        if (current.gValue + findGForNeighbor(current, thisNeighbor) < thisNeighbor.gValue) {
+          console.log(thisNeighbor);
+          //find g and f values for neighbor
+          thisNeighbor.gValue = current.gValue + findGForNeighbor(current, thisNeighbor);
+          thisNeighbor.calcF();
+          //set parent of neighbor
+          thisNeighbor.parent = current;
+          if (!openSet.includes(thisNeighbor)) {
+            openSet.push(thisNeighbor);
+            updateDisplay();
+          } //check if open set includes neighbor
+        } //end chek if current path is less than existing
+      } //end check if traversable
+    } //end loop through current.neighbors
+  } //end loop while openSet is not empty
+};
+
+/*
+-loop
+-        current = node in OPEN with the lowest f_cost
+-        remove current from OPEN
+-        add current to CLOSED
+
+-        if current is the target node //path has been found
+-                return
+
+-        foreach neighbour of the current node
+-                if neighbour is not traversable or neighbour is in CLOSED
+-                        skip to the next neighbour
+-
+-                if new path to neighbour is shorter OR neighbour is not in OPEN
+-                        set f_cost of neighbour
+-                        set parent of neighbour to current
+-                        if neighbour is not in OPEN
+-                          add neighbour to OPEN
+*/

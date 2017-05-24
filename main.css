@@ -62,3 +62,11 @@ button:active {
 button:focus {
   outline: 0;
 }
+
+.openSet {
+  background-color: #85c47e;
+}
+
+.closedSet {
+  background-color: #009401;
+}
