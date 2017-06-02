@@ -29,10 +29,10 @@ My next solution involved creating a class for the nodes and storing the nodes i
 
 What I decided to do was write a method for the class that would assign a uniqe index to each node. This index would correspond with the index of the div on the DOM. This way I could create a single function that would update the DOM and call it whenever a particular nodes status was changed. Below are some photos of the program working currently. It's clear that my implimentation of AStar is not correct yet, because the paths that this program finds are not the most efficient, but they are pretty close. I will touch on this more in the next section.
 
-![program on load](https://www.i.imgur.com/3Q3zyMH "empty grid")
-![basic path found](http://i.imgur.com/o5HYVJr "path found")
-![creating obstacles](http://imgur.com/wu3XGzQ "creating obstacles")
-![path found](http://i.imgur.com/o5HYVJr "path found")
+![program on load](/img1.png "empty grid")
+![basic path found](/img2.png "path found")
+![creating obstacles](/img3.png "creating obstacles")
+![path found](/img4.png "path found")
 
 
 ### Next
